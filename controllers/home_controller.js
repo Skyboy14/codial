@@ -10,8 +10,22 @@ module.exports.home = function (req, res) {
     //     })
     //     .catch((err) => console.log('error occured'))
 
-    Post.find({}).populate('user').exec()
+    Post.find({})
+        .populate('user')
+        .populate({
+            path: 'comment',
+            populate: {
+                path: 'user'
+            }
+        })
+        .exec()
         .then((posts) => {
+            if (!posts) {
+                // Post does not exist
+                console.log('Posts not found');
+                res.redirect('/');
+                return;
+            }
             return res.render('home', {
                 title: 'Codial | Home',
                 posts: posts
