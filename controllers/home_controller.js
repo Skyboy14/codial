@@ -1,4 +1,5 @@
 const Post = require('../models/post')
+const User = require('../models/user')
 
 module.exports.home = function (req, res) {
     // Post.find({})
@@ -20,16 +21,21 @@ module.exports.home = function (req, res) {
         })
         .exec()
         .then((posts) => {
+            User.find({})
+                .then((users) => {
+                    return res.render('home', {
+                        title: 'Codial | Home',
+                        posts: posts,
+                        all_users: users
+                    })
+                })
             if (!posts) {
                 // Post does not exist
                 console.log('Posts not found');
                 res.redirect('/');
                 return;
             }
-            return res.render('home', {
-                title: 'Codial | Home',
-                posts: posts
-            })
+
         })
         .catch((err) => console.log('error occured', err))
 }
