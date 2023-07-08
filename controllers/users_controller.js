@@ -1,4 +1,6 @@
 const User = require('../models/user');
+const fs = require('fs');
+const path = require('path');
 
 module.exports.profile = function (req, res) {
     User.findById(req.params.id)
@@ -11,15 +13,50 @@ module.exports.profile = function (req, res) {
 
 }
 
-module.exports.update = function (req, res) {
+module.exports.update = async function (req, res) {
+    // if (req.user.id == req.params.id) {
+    //     User.findByIdAndUpdate(req.params.id, req.body)
+    //         .then(() => {
+    //             req.flash('success', 'you signed in successfully')
+    //             return res.redirect('back')
+    //         })
+    //         .catch((err) => console.log(err))
+    // } else {
+    //     return res.status(401).send('Unathorized')
+    // }
+
     if (req.user.id == req.params.id) {
-        User.findByIdAndUpdate(req.params.id, req.body)
-            .then(() => {
-                req.flash('success', 'you signed in successfully')
+
+        try {
+            let user = await User.findByIdAndUpdate(req.params.id);
+            User.uploadedAvatar(req, res, function (err) {
+                if (err) {
+                    console.log('******* Multer error', err)
+                }
+                user.name = req.body.name;
+                user.email = req.body.email;
+
+                if (req.file) {
+
+                    // delet the existing profile pic if we add new profile
+                    if (user.avatar) {
+                        fs.unlinkSync(path.join(__dirname, '..', user.avatar))
+                    }
+
+                    // saving path of uploaded file into the avatar field in the user
+                    user.avatar = User.avatarPath + '/' + req.file.filename
+                }
+                user.save();
                 return res.redirect('back')
             })
-            .catch((err) => console.log(err))
+
+        } catch (err) {
+            req.flash('error', err)
+            return res.redirect('back')
+        }
+
     } else {
+        req.flash('error', 'Unathorized')
         return res.status(401).send('Unathorized')
     }
 
